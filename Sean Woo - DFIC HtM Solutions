@@ -1,0 +1,504 @@
+# %% [markdown]
+# # Hack the Market OA 2024 - Question 1
+# 
+# This question consists of two parts (one coding and one written).
+# 
+# ## Part 1: Stock Price Prediction
+# 
+# You are given an array of integers `prices` representing the daily stock prices of a company. Write a function called `stockPricePrediction` that returns an integer array such that `answer[i]` is the number of days you have to wait after the `i`th day to see a higher stock price. If there is no future day with a higher price, keep `answer[i] == 0` instead.
+# 
+# ### Example 1:
+# Input: `prices = [100, 101, 102, 99, 98, 101, 103, 100]`
+# 
+# Output: `[1, 1, 4, 2, 1, 1, 0, 0]`
+# 
+# Explanation: On the first day (price = 100), you have to wait 1 day to get a higher price (101). Similarly, for the second day (101), the next higher price (102) occurs after 1 day. On the third day (102), it takes 4 days to see a higher price (103), and so on.
+# 
+# ### Example 2:
+# Input: `prices = [30, 40, 50, 60]`
+# 
+# Output: `[1, 1, 1, 0]`
+# 
+# Explanation: On each day, the stock price is higher the next day, except for the last day.
+# 
+# ### Example 3:
+# Input: `prices = [90, 60, 30]`
+# 
+# Output: `[0, 0, 0]`
+# 
+# Explanation: On the first day (price = 90), there are no future days with a higher price. On the second day (price = 60), there are also no future days with a higher price. Similarly, on the third day (price = 30), there are no future days with a higher price.
+# 
+# ### Constraints:
+# - `1 <= prices.length <= 10^6`
+# 
+# - `1 <= prices[i] <= 1000`
+# 
+# ### Requirements:
+# 
+# - You must define and implement a function called `stockPricePrediction`.
+# 
+# - The cummulative runtime of all test cases should be less than 5 seconds.
+# 
+# - Leave useful comments in your solution.
+
+# %%
+# Your Code Here
+
+def stockPricePrediction(prices: list[int]) -> list[int]:
+    n = len(prices)
+    answer = [0] * n #initialize answer array with 0, default return value
+    stack = [] #stack to keep track of indices
+
+    for current_day in range(n):
+        #pop indices from stack where current price is greater than price at index
+        while stack and prices[current_day] > prices[stack[-1]]: 
+            previous_day = stack.pop()
+            answer[previous_day] = current_day - previous_day #calculate the number of days
+
+        stack.append(current_day) #push current index onto the stack
+    
+    return answer
+
+# %%
+# Unit testing cell (feel free to modify this and/or add more tests as needed)
+
+prices1 = [100, 101, 102, 99, 98, 101, 103, 100]
+prices2 = [30, 40, 50, 60]
+prices3 = [90, 60, 30]
+
+assert stockPricePrediction(prices1) == [1, 1, 4, 2, 1, 1, 0, 0]
+assert stockPricePrediction(prices2) == [1, 1, 1, 0]
+assert stockPricePrediction(prices3) == [0, 0, 0]
+
+# %% [markdown]
+# ## Part 2: Time/Space Complexity Analysis
+# 
+# State the time/space complexity (Big O notation) of your algorithm in part 1 provide a 1-2 sentence explanation.
+# 
+# Time Complexity: O(n)
+# 
+# Space Compleity: O(n)
+# 
+# Explanation: 
+# The algorithm iterates through the list of stock prices once using a single loop. In the while loop, elements are pushed and popped from the stack at most once resulting in constant time complexity. Therefore the time complexity of the overall function is linear, O(n)
+# 
+# In the worst-case scenario (prices in decreasing order), the stack may contain n indices resulting in O(n) space usage. The answer list stores one result per input, also requiring O(n) space. 
+
+
+# %% [markdown]
+# ### Question 2: NYC Flight Data Analysis
+# You are provided with a large dataset containing information on NYC flights from the year 2013.
+# 
+# Before you begin, ensure that you have the following Python libraries installed. (Might be useful to create a virtual environment).
+
+# %%
+import numpy as np
+import pandas as pd
+from scipy import stats, integrate
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# %% [markdown]
+# The dataset includes various details such as departure times, delays, carriers, and destinations. Below is a sample of the data:
+
+# %%
+flight_data=pd.read_csv("./flight_data.csv")
+flight_data.head()
+
+# %% [markdown]
+# ### Part 1 - Data cleaning
+# 
+# 1. Identify Missing Values
+#     - 1.1 Find and display all rows in the dataset that contain at least one null value in any column.
+# 2. Handle Missing Values
+#     - 1.2 Remove (omit) all rows where a null (NaN) value is present in any column.
+# 
+
+# %%
+import pandas as pd
+flight_data=pd.read_csv("./flight_data.csv")
+#part 1, find all rows with at least one null value with .isnull()
+rows_with_nulls = flight_data[flight_data.isnull().any(axis=1)]
+#display rows
+print(rows_with_nulls)
+#part 2, remove the rows with at least one null value
+flight_data_cleaned = flight_data.dropna()
+
+
+# %% [markdown]
+# ### Part 2 - Data Analysis:
+# 
+# 1. Identify top 10 destination airports from NYC 
+# 
+#     1. Display a table showing each of these airports along with the number of flights to each.
+# 
+#     2. Create a plot to visualize this data. Choose a chart type that you find most appropriate. Ensure that your plot includes: 
+#     - a clear title 
+#     - labeled axes 
+#     - legend (if applicable)
+# 
+# 2. Calculate the average departure delay for each carrier on a monthly basis
+# 
+#     Present this data in a table with the following three columns:
+#     - Carrier
+#     - Month (formatted as MM-MMMM, e.g., 03-March)
+#     - Average Departure Delay
+
+# %%
+import pandas as pd
+
+#part 1.1
+#read the file, filter to only flights from NYC's airports
+flight_data = pd.read_csv("flight_data.csv")
+nyc_flights = flight_data[flight_data['origin'].isin(['JFK', 'LGA', 'EWR'])]
+
+#find the top 10 destinations for flights from nyc
+top_destinations = nyc_flights['dest'].value_counts().head(10).reset_index()
+#create a table with the destination airports and the number of flights to each
+top_destinations.columns = ['Destination Airport', 'Number of Flights']
+print(top_destinations)
+
+#part 1.2
+import matplotlib.pyplot as plt
+#plot the data using matplotlib
+plt.figure(figsize=(10, 6))
+plt.bar(top_destinations['Destination Airport'], top_destinations['Number of Flights'], color='skyblue')
+#create title
+plt.title('Top 10 Destination Airports from NYC')
+#horizontal axis table
+plt.xlabel('Destination Airport')
+#vertical axis table
+plt.ylabel('Number of Flights')
+plt.xticks(rotation=45)
+plt.tight_layout()
+for index, value in enumerate(top_destinations['Number of Flights']):
+    plt.text(index, value, str(value), ha='center', va='bottom')
+plt.show()
+
+#part 2.1
+#sort flights by carrier and month, calculate the mean of each subset
+avg_delay = flight_data.groupby(['carrier', 'month'])['dep_delay'].mean().reset_index()
+#add column headings Carrier, Month, Average Departure Delay
+avg_delay.columns = ['Carrier', 'Month', 'Average Departure Delay']
+print(avg_delay)
+
+
+# %% [markdown]
+# ### Part 3 - Consistency in On-Time Performance
+# 
+# 1. Determine which carrier has the most consistent on-time performance, defined as having the smallest variance in departure delays.
+# 
+# 2. Instructions:
+# 
+#     1. Data Cleaning: Ensure that the dataset is cleaned as in Part 1 before performing this analysis.
+# 
+#     2. Variance Calculation: You must **not** use any of the libraries imported above (numpy, pandas, scipy, etc.) for this part. Implement your own function to calculate the variance of departure delays for each carrier.
+# 
+# 3. Deliverable
+# 
+#     1. Identify and display the carrier with the smallest variance in departure delays.
+# 
+#     2. Provide a brief explanation of your findings.
+
+# %%
+# boilerplate for file parsing
+import csv
+#part 1 cleaning
+import pandas as pd
+flight_data=pd.read_csv("./flight_data.csv")
+rows_with_nulls = flight_data[flight_data.isnull().any(axis=1)]
+data = flight_data.dropna()
+
+#variance calculation
+def variance(delays):
+    mean = sum(delays) / len(delays)
+    variance = sum((x - mean) ** 2 for x in delays) / len(delays)
+    return variance
+
+#deliverable
+# calculate the variance of departure delays for each carrier
+def carrier_variance(data):
+    carrier_delays = {}
+    for _, row in data.iterrows():
+        carrier = row['carrier']
+        dep_delay = row['dep_delay']
+        if carrier not in carrier_delays:
+            carrier_delays[carrier] = []
+        carrier_delays[carrier].append(dep_delay)
+    
+    carrier_variances = {carrier: variance(delays) for carrier, delays in carrier_delays.items()}
+    return carrier_variances
+
+# identify the carrier with the smallest variance in departure delays
+def find_most_consistent_carrier(carrier_variances):
+    most_consistent_carrier = min(carrier_variances, key=carrier_variances.get)
+    return most_consistent_carrier, carrier_variances[most_consistent_carrier]
+
+carrier_variances = carrier_variance(data)
+most_consistent_carrier, smallest_variance = find_most_consistent_carrier(carrier_variances)
+
+print(f"The carrier with the most consistent on-time performance is {most_consistent_carrier} with a variance of {smallest_variance:.2f} in departure delays.")
+
+# %% [markdown]
+# (Optional) Check your findings by using the numpy library to preform the same analysis.
+
+# %%
+import pandas as pd
+import numpy as np
+
+#part 1
+flight_data = pd.read_csv('./flight_data.csv')
+rows_with_nulls = flight_data[flight_data.isnull().any(axis=1)]
+data = flight_data.dropna()
+
+#deliverable
+#calculate the variance of departure delays for each carrier
+def carrier_variance(data):
+    carrier_delays = {}
+    for _, row in data.iterrows():
+        carrier = row['carrier']
+        dep_delay = row['dep_delay']
+        if carrier not in carrier_delays:
+            carrier_delays[carrier] = []
+        carrier_delays[carrier].append(dep_delay)
+
+    carrier_variances = {carrier: np.var(delays) for carrier, delays in carrier_delays.items()}
+    return carrier_variances
+
+#identify the carrier with the smallest variance in departure delays
+def find_most_consistent_carrier(carrier_variances):
+    most_consistent_carrier = min(carrier_variances, key=carrier_variances.get)
+    return most_consistent_carrier, carrier_variances[most_consistent_carrier]
+
+carrier_variances = carrier_variance(data)
+most_consistent_carrier, smallest_variance = find_most_consistent_carrier(carrier_variances)
+
+print(f"The carrier with the most consistent on-time performance is {most_consistent_carrier} with a variance of {smallest_variance:.2f} in departure delays.")
+
+
+
+# %% [markdown]
+# # Problem: Implement Linear Regression from Scratch in Python
+# 
+# ## Introduction
+# 
+# Linear Regression is a fundamental algorithm in machine learning used to model the relationship between a dependent variable (target) and one or more independent variables (features). The goal is to find the best-fitting line that minimizes the error between the predicted values and the actual values.
+# 
+# ### Mean Squared Error (MSE)
+# 
+# To evaluate the performance of a linear regression model, we often use **Mean Squared Error (MSE)**. MSE measures the average squared difference between the predicted values and the actual values. It is calculated as follows:
+# 
+# $$
+# MSE = \frac{1}{n} \sum_{i=1}^{n} (y_{\text{pred},i} - y_{\text{true},i})^2
+# $$
+# 
+# Where:
+# - `n` is the number of data points.
+# - `y_pred` is the predicted value.
+# - `y_true` is the actual value.
+# 
+# The objective of the linear regression algorithm is to minimize the MSE by finding the optimal values for the slope (`m`) and intercept (`b`) of the regression line.
+# 
+# 
+# ## Feature Normalization
+# 
+# We will also normalize the feature values using the formula:
+# 
+#     X_norm = (X - mean(X)) / std(X)
+# 
+# Where:
+# - `mean(X)` is the mean of the feature values.
+# - `std(X)` is the standard deviation of the feature values.
+# 
+# This ensures the features are on a similar scale.
+# 
+# ---
+# 
+# ## Part 1
+# 
+# Your objective is to implement a **Linear Regression** model from scratch in Python using the following steps:
+# 
+# 1. **Calculate MSE**: Write a function to compute the Mean Squared Error between the predicted values and the actual values.
+# 2. **Normalize the Data**: Write a function to normalize the data using the given formula.
+# 3. **Implement this algorithm to fit a line to 2-dimensional dataset**: Hint: Google Gradient Descent
+# 4. **Predict**: Create a method to predict target values based on the fitted model.
+# 
+# You are allowed to use online resources for reference, but you must write the code yourself. You cannot use external libraries that perform linear regression (e.g., `scikit-learn`, `numpy`). Basic Python functions are allowed.
+# 
+
+# %%
+class LinearRegression:
+    
+    def __init__(self):
+        self.m = 0  # Slope of the line
+        self.b = 0  # Intercept of the line
+    
+    def normalize(self, X):
+        """
+        Normalizes the feature values in X.
+        
+        Args:
+        X (list of floats): The feature values to be normalized.
+        
+        Returns:
+        list of floats: The normalized feature values.
+        """
+        mean_X = np.mean(X)
+        std_X = np.std(X)
+        X_normalized = (X - mean_X) / std_X
+        return X_normalized
+    
+    def fit(self, X, y, learning_rate=0.01, num_iterations=1000):
+        """
+        Finds the slope and y-intercept of the line of best fit.
+        
+        Args:
+        X (list of floats): The feature values.
+        y (list of floats): The target values.
+        learning_rate (float): The learning rate for gradient descent.
+        num_iterations (int): The number of iterations to run gradient descent.
+        
+        Returns:
+        tuple (float, float): The slope (m) and intercept (b) of the fitted line.
+        """
+        n = len(X)
+        
+        for _ in range(num_iterations):
+            y_pred = self.m * X + self.b
+            dm = (-2 / n) * np.sum(X * (y - y_pred))
+            db = (-2 / n) * np.sum(y - y_pred)
+            self.m -= learning_rate * dm
+            self.b -= learning_rate * db
+
+        return self.m, self.b
+    
+    def predict(self, X):
+        """
+        Predicts the target values given the feature values and the learned model.
+        
+        Args:
+        X (list of floats): The feature values for prediction.
+        
+        Returns:
+        list of floats: The predicted target values.
+        """
+
+        # your code here:
+        predicted_vals = [self.m * x + self.b for x in X]
+
+        return predicted_vals
+    
+    def mean_squared_error(self, y_true, y_pred):
+        """
+        Computes the Mean Squared Error between true and predicted target values.
+        
+        Args:
+        y_true (list of float): The actual target values.
+        y_pred (list of float): The predicted target values.
+        
+        Returns:
+        float: The Mean Squared Error (MSE).
+        """
+        n = len(y_true)
+        mse = sum((y_true[i] - y_pred[i]) ** 2 for i in range(n)) / n
+        return mse
+
+
+# %% [markdown]
+# ## Part 2
+# 
+# ### Visualizing Linear Regression Results with Matplotlib
+# 
+# In this part, you will fit your `LinearRegression` model to a dataset and visualize the resulting regression line. This exercise will help you see how well your model performs by examining the Mean Squared Error and viewing the regression line in relation to the actual data points.
+# 
+# ### Instructions
+# 1. Use the provided dataset to fit your model.
+# 2. Plot the data points alongside the regression line using Matplotlib.
+# 3. Display the Mean Squared Error of your model for reference.
+
+# %% [markdown]
+# ## Dataset Generation
+# Use this data for the plot (don't modify this)
+
+# %%
+import numpy as np
+
+def generate_data():
+    np.random.seed(42)
+    X = np.linspace(1, 50, 100)
+    Y = 3 * X + 7 + np.random.normal(0, 10, size=X.shape)
+    return X.tolist(), Y.tolist()
+
+# %%
+import matplotlib.pyplot as plt
+
+X, Y = generate_data()
+
+class LinearRegression:
+
+    def __init__(self):
+        self.m = 0  # Slope of the line
+        self.b = 0  # Intercept of the line
+
+    def mean_squared_error(self, y_true, y_pred):
+        n = len(y_true)
+        mse = sum((y_true[i] - y_pred[i]) ** 2 for i in range(n)) / n
+        return mse
+
+    def normalize(self, X):
+        mean_X = sum(X) / len(X)
+        std_X = (sum((x - mean_X) ** 2 for x in X) / len(X)) ** 0.5
+        X_normalized = [(x - mean_X) / std_X for x in X]
+        return X_normalized
+
+    def fit(self, X, y, learning_rate=0.01, num_iterations=1000):
+        n = len(X)
+        for _ in range(num_iterations):
+            y_pred = [self.m * X[i] + self.b for i in range(n)]
+            dm = (-2 / n) * sum(X[i] * (y[i] - y_pred[i]) for i in range(n))
+            db = (-2 / n) * sum(y[i] - y_pred[i] for i in range(n))
+            self.m -= learning_rate * dm
+            self.b -= learning_rate * db
+        return self.m, self.b
+
+    def predict(self, X):
+        return [self.m * x + self.b for x in X]
+    
+# create and fit the model
+model = LinearRegression()
+
+# normalize X
+X_normalized = model.normalize(X)
+
+# fit the model
+model.fit(X_normalized, Y, learning_rate=0.01, num_iterations=10000)
+
+# predict values
+Y_pred = model.predict(X_normalized)
+
+# calculate MSE
+mse = model.mean_squared_error(Y, Y_pred)
+print(f"Mean Squared Error: {mse:.2f}")
+
+# Plot the data points and the regression line
+plt.figure(figsize=(10, 6))
+plt.scatter(X, Y, color='blue', label='Data Points')
+plt.plot(X, Y_pred, color='red', label='Regression Line')
+plt.title('Linear Regression Fit')
+plt.xlabel('X')
+plt.ylabel('Y')
+plt.legend()
+
+textstr = f'MSE: {mse:.2f}'
+props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+plt.text(0.05, 0.95, textstr, transform=plt.gca().transAxes, fontsize=12,
+         verticalalignment='top', bbox=props)
+
+plt.show()
+
+
+
+# %% [markdown]
+# 
+
+
